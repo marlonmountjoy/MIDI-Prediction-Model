@@ -1,0 +1,31 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+
+# Jupyter Notebook checkpoints
+*.ipynb_checkpoints
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Model and output files
+*.pth
+*.pt
+*.npy
+*.jsonl
+*.mid
+
+# VS Code settings (optional)
+.vscode/
+
+# Data files (optional - ignore raw datasets)
+data/
