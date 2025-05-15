@@ -61,4 +61,4 @@ print(generated[:50])  # preview only
 with open(OUTPUT_FILE, "w") as f:
     json.dump(generated, f)
 
-print(f"✅ Generated sequence saved to {OUTPUT_FILE}")
+print(f"\u2705 Generated sequence saved to {OUTPUT_FILE}")

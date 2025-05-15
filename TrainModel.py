@@ -72,4 +72,4 @@ for epoch in range(EPOCHS):
 
 # --- Save the trained model ---
 torch.save(model.state_dict(), "lstm_model.pth")
-print("✅ Model saved to lstm_model.pth")
+print("\u2705 Model saved to lstm_model.pth")

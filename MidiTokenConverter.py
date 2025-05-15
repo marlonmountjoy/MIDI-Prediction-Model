@@ -35,7 +35,7 @@ def tokens_to_midi(tokens, output_path):
 
     midi.instruments.append(instrument)                  # Add the instrument to the MIDI track
     midi.write(output_path)                              # Write the MIDI file to disk
-    print(f"✅ MIDI file written to {output_path}")
+    print(f"\u2705 MIDI file written to {output_path}")
 
 # --- Load generated tokens from a JSON file ---
 with open(INPUT_FILE, "r") as f:
