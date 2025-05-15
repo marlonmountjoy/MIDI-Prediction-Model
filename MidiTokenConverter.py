@@ -4,11 +4,11 @@ import json
 # --- Settings ---
 INPUT_FILE = "generatedTokens.json"         # JSON file containing generated tokens
 OUTPUT_MIDI = "generated_output.mid"         # Output filename for the MIDI file
-TIME_SHIFT_RESOLUTION = 10 / 1000            # Time shift step size: 10 ms converted to seconds
+TIME_SHIFT_RESOLUTION = 3 / 1000            # Time shift step size: 10 ms converted to seconds
 
 # --- Function to convert tokens to a MIDI file ---
 def tokens_to_midi(tokens, output_path):
-    midi = pretty_midi.PrettyMIDI()                      # Create a new MIDI object
+    midi = pretty_midi.PrettyMIDI(initial_tempo=160.0)                      # Create a new MIDI object
     instrument = pretty_midi.Instrument(program=0)       # Use acoustic grand piano (program 0)
 
     time = 0.0                                            # Current absolute time in seconds

@@ -3,10 +3,11 @@ import torch.nn as nn
 import json
 from SequenceData import MIDITokenDataset
 
-# --- Generation settings ---
+# --- Generation Settings ---
 SEED_TOKENS = ["note_on_60", "time_shift_120", "note_off_60"]
-GENERATE_LENGTH = 100  # How many new tokens to generate
+GENERATE_LENGTH = 1000  # Generate 1000 tokens
 MODEL_PATH = "lstm_model.pth"
+OUTPUT_FILE = "generatedTokens.json"
 
 # --- Load vocab ---
 with open("vocab.json", "r") as f:
@@ -14,7 +15,7 @@ with open("vocab.json", "r") as f:
 idx_to_token = {v: k for k, v in token_to_idx.items()}
 vocab_size = len(token_to_idx)
 
-# --- LSTM model class ---
+# --- LSTM model definition ---
 class LSTMModel(nn.Module):
     def __init__(self, vocab_size, embed_size=128, hidden_size=256, num_layers=2):
         super().__init__()
@@ -25,10 +26,10 @@ class LSTMModel(nn.Module):
     def forward(self, x, hidden=None):
         x = self.embed(x)
         out, hidden = self.lstm(x, hidden)
-        out = self.fc(out[:, -1, :])  # only return final timestep
+        out = self.fc(out[:, -1, :])
         return out, hidden
 
-# --- Load model and weights ---
+# --- Load trained model ---
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = LSTMModel(vocab_size)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
@@ -50,10 +51,14 @@ for _ in range(GENERATE_LENGTH):
     token = idx_to_token[idx]
     generated.append(token)
 
-    # Update input tensor with most recent token
+    # Use the new token as the next input
     input_tensor = torch.tensor([[idx]], dtype=torch.long).to(device)
 
-# --- Print generated tokens ---
-print("🪄 Generated sequence:")
-print(generated)
+# --- Print and save results ---
+print("🪄 Generated sequence preview:")
+print(generated[:50])  # preview only
 
+with open(OUTPUT_FILE, "w") as f:
+    json.dump(generated, f)
+
+print(f"✅ Generated sequence saved to {OUTPUT_FILE}")
