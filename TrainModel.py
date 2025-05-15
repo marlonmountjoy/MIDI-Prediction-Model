@@ -2,16 +2,16 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import json
-from sequence_dataset import MIDITokenDataset  # your custom Dataset class
+from SequenceData import MIDITokenDataset  # Custom Dataset class
 
 # --- Hyperparameters ---
-SEQ_LEN = 100         # Number of tokens in each input sequence
-BATCH_SIZE = 64       # How many samples per training batch
-EPOCHS = 10           # Number of passes over the full dataset
-EMBED_SIZE = 128      # Size of embedding vectors (token -> vector)
-HIDDEN_SIZE = 256     # Number of LSTM units per layer
-NUM_LAYERS = 2        # Number of stacked LSTM layers
-LR = 0.001            # Learning rate for optimizer
+SEQ_LEN = 100        
+BATCH_SIZE = 64       
+EPOCHS = 10           
+EMBED_SIZE = 128      
+HIDDEN_SIZE = 256     
+NUM_LAYERS = 2        
+LR = 0.001           
 
 # --- Load token vocabulary ---
 with open("vocab.json", "r") as f:
