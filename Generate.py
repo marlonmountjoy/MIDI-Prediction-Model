@@ -1,64 +1,46 @@
-import torch
-import torch.nn as nn
 import json
-from SequenceData import MIDITokenDataset
+import torch
+import numpy as np
+import os
+from TrainModel import LSTMModel
+from SequenceData import Vocabulary
 
-# --- Generation Settings ---
-SEED_TOKENS = ["note_on_60", "time_shift_120", "note_off_60"]
-GENERATE_LENGTH = 1000  # Generate 1000 tokens
-MODEL_PATH = "lstm_model.pth"
-OUTPUT_FILE = "generatedTokens.json"
+# Load the trained model
+model = LSTMModel(input_size=512, hidden_size=256, output_size=512)
+model.load_state_dict(torch.load("trained_model.pt", map_location=torch.device("cpu")))
+model.eval()
 
-# --- Load vocab ---
-with open("vocab.json", "r") as f:
-    token_to_idx = json.load(f)
-idx_to_token = {v: k for k, v in token_to_idx.items()}
-vocab_size = len(token_to_idx)
+# Load the vocabulary
+vocab = Vocabulary.load("vocab.json")
+idx_to_token = vocab.idx_to_token
+token_to_idx = vocab.token_to_idx
 
-# --- LSTM model definition ---
-class LSTMModel(nn.Module):
-    def __init__(self, vocab_size, embed_size=128, hidden_size=256, num_layers=2):
-        super().__init__()
-        self.embed = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, vocab_size)
+# Generation settings
+start_sequence = ["note_on_60", "time_shift_120", "note_off_60"]
+generate_length = 1000
 
-    def forward(self, x, hidden=None):
-        x = self.embed(x)
-        out, hidden = self.lstm(x, hidden)
-        out = self.fc(out[:, -1, :])
-        return out, hidden
+# Convert start sequence to indices
+input_seq = [token_to_idx[token] for token in start_sequence]
+input_tensor = torch.tensor(input_seq, dtype=torch.long).unsqueeze(0)  # shape: (1, seq_len)
 
-# --- Load trained model ---
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = LSTMModel(vocab_size)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-model.eval().to(device)
+# Generate token sequence
+generated = input_seq.copy()
+with torch.no_grad():
+    hidden = None
+    for _ in range(generate_length):
+        output, hidden = model(input_tensor[:, -1].unsqueeze(1), hidden)
+        probs = torch.softmax(output[:, -1, :], dim=-1)
+        next_token = torch.multinomial(probs, num_samples=1).item()
+        generated.append(next_token)
+        input_tensor = torch.tensor([generated[-len(start_sequence):]], dtype=torch.long)
 
-# --- Convert seed to tensor ---
-input_seq = [token_to_idx[t] for t in SEED_TOKENS if t in token_to_idx]
-input_tensor = torch.tensor(input_seq, dtype=torch.long).unsqueeze(0).to(device)
+# Convert back to tokens
+tokens = [idx_to_token[idx] for idx in generated]
 
-# --- Generate new tokens ---
-generated = SEED_TOKENS.copy()
-hidden = None
+# Save to ./output/generatedTokens.json
+output_path = os.path.join("output", "generatedTokens.json")
+os.makedirs("output", exist_ok=True)
+with open(output_path, "w") as f:
+    json.dump(tokens, f, indent=2)
 
-for _ in range(GENERATE_LENGTH):
-    output, hidden = model(input_tensor, hidden)
-    prob = torch.softmax(output[0], dim=0)
-    idx = torch.multinomial(prob, num_samples=1).item()
-
-    token = idx_to_token[idx]
-    generated.append(token)
-
-    # Use the new token as the next input
-    input_tensor = torch.tensor([[idx]], dtype=torch.long).to(device)
-
-# --- Print and save results ---
-print("🪄 Generated sequence preview:")
-print(generated[:50])  # preview only
-
-with open(OUTPUT_FILE, "w") as f:
-    json.dump(generated, f)
-
-print(f"\u2705 Generated sequence saved to {OUTPUT_FILE}")
+print(f"Tokens generated and saved to {output_path}")

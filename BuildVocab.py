@@ -26,5 +26,5 @@ with open("vocab.json", "w") as f:
     json.dump(token_to_idx, f)
 
 # Show basic info
-print(f"\u2705✅ Vocabulary size: {len(vocab)}")
-print(f"\U0001F9E0 Sample tokens: {list(token_to_idx.items())[:10]}")
+print(f"Vocabulary size: {len(vocab)}")
+print(f"Sample tokens: {list(token_to_idx.items())[:10]}")
