@@ -7,7 +7,7 @@ This project trains a character-level LSTM model to predict musical sequences us
 ## 🔧 Features
 
 - Preprocessing for large-scale MIDI corpora (LAKH)
-- Event-based tokenization (note_on, note_off, time_shift, velocity)
+- Event-based tokenization (note_on, note_off, time_shift, (velocity coming soon))
 - LSTM-based sequence model
 - Auto-saves model weights after training
 - Generates new MIDI-style event sequences

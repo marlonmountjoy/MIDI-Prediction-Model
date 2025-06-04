@@ -29,5 +29,5 @@ with open("vocab.json", "w") as f:
     json.dump(token_to_idx, f)
 
 # Print summary information
-print(f"\u2705 Vocabulary size: {len(vocab)}")  # Total number of unique tokens
-print(f"\U0001F9E0 Sample tokens: {list(token_to_idx.items())[:10]}")  # Show first few mappings
+print(f"Vocabulary size: {len(vocab)}")  # Total number of unique tokens
+print(f"Sample tokens: {list(token_to_idx.items())[:10]}")  # Show first few mappings
