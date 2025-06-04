@@ -4,8 +4,12 @@ import json
 from SequenceData import MIDITokenDataset
 
 # --- Generation Settings ---
-SEED_TOKENS = ["note_on_60", "time_shift_120", "note_off_60"] 
-GENERATE_LENGTH = 1000  
+SEED_TOKENS = [
+    "note_on_60", "note_on_64", "note_on_67",  # C major chord: C-E-G
+    "time_shift_240",
+    "note_off_60", "note_off_64", "note_off_67"
+]
+GENERATE_LENGTH = 10000 
 MODEL_PATH = "lstm_model.pth"
 OUTPUT_FILE = "generatedTokens.json"
 
