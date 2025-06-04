@@ -2,10 +2,17 @@ import torch
 import torch.nn as nn
 import json
 from SequenceData import MIDITokenDataset
+#rm -rf venv
+#python3 -m venv venv
+#source venv/bin/activate
+#pip install --upgrade pip
+#pip install -r requirements.txt
+#python Generate.py  
+
 
 # --- Generation Settings ---
-SEED_TOKENS = ["note_on_60", "time_shift_120", "note_off_60"]
-GENERATE_LENGTH = 1000  # Generate 1000 tokens
+SEED_TOKENS = ["note_on_1", "time_shift_160", "note_off_5"]
+GENERATE_LENGTH = 100000 
 MODEL_PATH = "lstm_model.pth"
 OUTPUT_FILE = "generatedTokens.json"
 
@@ -55,7 +62,7 @@ for _ in range(GENERATE_LENGTH):
     input_tensor = torch.tensor([[idx]], dtype=torch.long).to(device)
 
 # --- Print and save results ---
-print("🪄 Generated sequence preview:")
+print("Generated sequence preview:")
 print(generated[:50])  # preview only
 
 with open(OUTPUT_FILE, "w") as f:
