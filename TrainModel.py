@@ -1,75 +1,91 @@
+# Import necessary PyTorch modules
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import json
-from SequenceData import MIDITokenDataset  # Custom Dataset class
+import time
+from SequenceData import MIDITokenDataset  # Import custom dataset class
 
 # --- Hyperparameters ---
-SEQ_LEN = 100        
-BATCH_SIZE = 64       
-EPOCHS = 10           
-EMBED_SIZE = 128      
-HIDDEN_SIZE = 256     
-NUM_LAYERS = 2        
-LR = 0.001           
+SEQ_LEN = 512        # Length of input token sequences
+BATCH_SIZE = 32      # Number of samples per training batch
+EPOCHS = 30          # Number of full passes through the training data
+EMBED_SIZE = 128     # Embedding dimension for token indices
+HIDDEN_SIZE = 256    # Hidden state size of LSTM
+NUM_LAYERS = 2       # Number of stacked LSTM layers
+LR = 0.001           # Learning rate for the optimizer
 
-# --- Load token vocabulary ---
+# --- Load token vocabulary from file ---
 with open("vocab.json", "r") as f:
     token_to_idx = json.load(f)
 
-vocab_size = len(token_to_idx)  # total number of unique tokens
+vocab_size = len(token_to_idx)  # Total number of unique tokens in vocabulary
 
-# --- Load dataset and wrap it in a DataLoader ---
+# --- Initialize dataset and data loader ---
 dataset = MIDITokenDataset("tokens.jsonl", token_to_idx, seq_len=SEQ_LEN)
-dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+print(f"Dataset size: {len(dataset)} samples")  # Print how many samples are in the dataset
 
-# --- Define the LSTM-based language model ---
+# DataLoader will load batches of token sequences during training
+dataloader = DataLoader(
+    dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=True,       # Shuffle dataset each epoch
+    pin_memory=False,   # Not using pinned memory (safer for Windows)
+    num_workers=0       # Single-threaded loading (safer for Windows)
+)
+
+# --- Define the LSTM model architecture ---
 class LSTMModel(nn.Module):
     def __init__(self, vocab_size, embed_size, hidden_size, num_layers):
         super().__init__()
-        self.embed = nn.Embedding(vocab_size, embed_size)  # turn token indices into vectors
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, vocab_size)  # predict logits over all tokens
+        self.embed = nn.Embedding(vocab_size, embed_size)  # Converts token indices to vectors
+        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)  # LSTM layers
+        self.fc = nn.Linear(hidden_size, vocab_size)  # Final layer projects to vocabulary size
 
     def forward(self, x):
-        x = self.embed(x)          # shape: (batch, seq_len) → (batch, seq_len, embed_size)
-        out, _ = self.lstm(x)      # shape: (batch, seq_len, hidden_size)
-        out = self.fc(out[:, -1, :])  # use output at last timestep → (batch, vocab_size)
+        x = self.embed(x)            # (batch, seq_len) -> (batch, seq_len, embed_size)
+        out, _ = self.lstm(x)        # Output from LSTM: (batch, seq_len, hidden_size)
+        out = self.fc(out[:, -1, :]) # Use only the final time step output -> (batch, vocab_size)
         return out
 
-# --- Set device to GPU if available ---
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# --- Setup training device ---
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Use GPU if available
+print(f"Using device: {device}")
+if torch.cuda.is_available():
+    print(f"CUDA device name: {torch.cuda.get_device_name(0)}")  # Confirm GPU identity
 
-# --- Initialize and move model to device ---
+# Instantiate the model and move it to the correct device
 model = LSTMModel(vocab_size, EMBED_SIZE, HIDDEN_SIZE, NUM_LAYERS).to(device)
 
-# --- Define loss and optimizer ---
-criterion = nn.CrossEntropyLoss()                  # loss between predicted logits and actual token index
-optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+# Set up loss function and optimizer
+criterion = nn.CrossEntropyLoss()  # Standard loss for classification
+optimizer = torch.optim.Adam(model.parameters(), lr=LR)  # Adam optimizer
 
-# --- Training loop ---
+# --- Main training loop ---
 for epoch in range(EPOCHS):
-    model.train()
-    total_loss = 0
+    model.train()  # Set model to training mode
+    total_loss = 0  # Accumulate loss for averaging
+    epoch_start = time.time()  # Start timer for benchmarking
 
-    for x_batch, y_batch in dataloader:
-        # Move data to GPU if available
-        x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+    # Loop over all batches
+    for batch_idx, (x_batch, y_batch) in enumerate(dataloader):
+        # Move input and target to GPU if available
+        x_batch = x_batch.to(device, non_blocking=True)
+        y_batch = y_batch.to(device, non_blocking=True)
 
-        # Forward pass
-        optimizer.zero_grad()
-        output = model(x_batch)       # shape: (batch_size, vocab_size)
-        loss = criterion(output, y_batch)
+        optimizer.zero_grad()     # Clear gradients
+        output = model(x_batch)   # Forward pass through the model
+        loss = criterion(output, y_batch)  # Compute loss
+        loss.backward()           # Backpropagate gradients
+        optimizer.step()          # Update model parameters
 
-        # Backward pass and parameter update
-        loss.backward()
-        optimizer.step()
+        total_loss += loss.item()  # Accumulate loss for epoch average
 
-        total_loss += loss.item()
-
+    # Compute average loss and epoch duration
     avg_loss = total_loss / len(dataloader)
-    print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {avg_loss:.4f}")
+    epoch_time = time.time() - epoch_start
+    print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {avg_loss:.4f}, Time: {epoch_time:.2f} sec")
 
-# --- Save the trained model ---
-torch.save(model.state_dict(), "lstm_model.pth")
-print("\u2705 Model saved to lstm_model.pth")
+# --- Save trained model weights to file ---
+torch.save(model.to("cpu").state_dict(), "lstm_model.pth")  # Move model to CPU before saving
+print("Model saved to lstm_model.pth")

@@ -7,7 +7,7 @@ import numpy as np
 
 MIDI_PATH = 'data'         # Folder containing MIDI files
 OUTPUT_FILE = 'tokens.jsonl'  # Output file for token sequences (one per line)
-MAX_FILES = 100            # Max number of MIDI files to process (adjustable)
+MAX_FILES = 10000            # Max number of MIDI files to process (adjustable)
 
 # Token settings
 TIME_SHIFT_RESOLUTION = 10  # Time resolution for shifts in milliseconds
@@ -86,13 +86,13 @@ def build_dataset(midi_dir, limit=1000):
 
 # --- Main script execution ---
 if __name__ == "__main__":
-    print(f"\U0001F4C1 Scanning '{MIDI_PATH}' for MIDI files...")
+    print(f"Scanning '{MIDI_PATH}' for MIDI files...")
 
     # Process MIDI files and build token dataset
     dataset = build_dataset(MIDI_PATH, limit=MAX_FILES)
 
-    print(f"\u2705 Processed {len(dataset)} MIDI files.")
-    print(f"\U0001F4C4 Saving token sequences to {OUTPUT_FILE}...")
+    print(f"Processed {len(dataset)} MIDI files.")
+    print(f"Saving token sequences to {OUTPUT_FILE}...")
 
     # Write token sequences to JSONL file (one sequence per line)
     with open(OUTPUT_FILE, "w") as f:
@@ -101,4 +101,4 @@ if __name__ == "__main__":
             f.write('\n')
 
     # Print a small sample of the first token sequence
-    print(f"\u2705 Done. Sample output:\n{dataset[0][:20]}")
+    print(f"Done. Sample output:\n{dataset[0][:20]}")

@@ -1,30 +1,33 @@
+# Import required modules
 import json
 from collections import Counter
 from pathlib import Path
 
-# Load token file from current working directory
+# Define path to the token file (assumes it's in the current working directory)
 token_file = Path("tokens.jsonl")
-token_sequences = []
 
-# Load each token sequence from file
+# Initialize a Counter to accumulate token frequencies efficiently
+token_freq = Counter()
+
+# Open the token file and update the frequency counter line-by-line
 with token_file.open() as f:
     for line in f:
-        tokens = json.loads(line)
-        token_sequences.append(tokens)
+        tokens = json.loads(line)           # Parse each line as a list of tokens
+        token_freq.update(tokens)           # Add token frequencies to the Counter
 
-# Build vocabulary
-all_tokens = [token for seq in token_sequences for token in seq]
-token_freq = Counter(all_tokens)
+# Sort tokens alphabetically for consistent vocab indexing
 vocab = sorted(token_freq.keys())
 
-# Create mappings
+# Create a token-to-index mapping
 token_to_idx = {token: idx for idx, token in enumerate(vocab)}
+
+# Create an index-to-token reverse mapping (not saved, but useful for debugging)
 idx_to_token = {idx: token for token, idx in token_to_idx.items()}
 
-# Save vocab for reuse (optional)
+# Save the token-to-index dictionary to a JSON file
 with open("vocab.json", "w") as f:
     json.dump(token_to_idx, f)
 
-# Show basic info
-print(f"\u2705✅ Vocabulary size: {len(vocab)}")
-print(f"\U0001F9E0 Sample tokens: {list(token_to_idx.items())[:10]}")
+# Print summary information
+print(f"\u2705 Vocabulary size: {len(vocab)}")  # Total number of unique tokens
+print(f"\U0001F9E0 Sample tokens: {list(token_to_idx.items())[:10]}")  # Show first few mappings
